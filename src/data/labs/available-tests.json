@@ -1,0 +1,19 @@
+{
+  "availableTests": [
+    "Complete Blood Count (CBC)",
+    "Lipid Profile",
+    "Liver Function Test (LFT)",
+    "Kidney Function Test (KFT)",
+    "Thyroid Profile",
+    "Blood Glucose (Fasting)",
+    "HbA1c (Diabetes Test)",
+    "Vitamin D",
+    "Vitamin B12",
+    "Iron Studies",
+    "Urine Analysis",
+    "Stool Analysis",
+    "ECG (Electrocardiogram)",
+    "Chest X-Ray",
+    "Ultrasound Abdomen"
+  ]
+}

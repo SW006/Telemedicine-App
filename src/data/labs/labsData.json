@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "Alnoor Diagnostic Centre",
+    "logo": "/labs/alnoor.png.svg",
+    "openTime": "05:00 AM",
+    "closeTime": "05:00 AM",
+    "branches": 1,
+    "discount": 15
+  },
+  {
+    "id": 2,
+    "name": "Pride Lab",
+    "logo": "/labs/pride.png.svg",
+    "openTime": "05:00 AM",
+    "closeTime": "05:00 AM",
+    "branches": 1,
+    "discount": 25
+  },
+  {
+    "id": 3,
+    "name": "C Labs Diagnostic",
+    "logo": "/labs/c-labs.png.svg",
+    "openTime": "05:00 AM",
+    "closeTime": "05:00 AM",
+    "branches": 1,
+    "discount": 40
+  }
+]
