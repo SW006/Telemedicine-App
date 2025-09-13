@@ -1,0 +1,20 @@
+{
+  "stats": {
+    "totalPatients": { "value": "1,245", "change": "+5%" },
+    "appointmentsToday": { "value": "18", "change": "+2%" },
+    "pendingReports": { "value": "7", "change": "-3%" },
+    "revenueThisWeek": { "value": "Rs. 5,420", "change": "+12%" }
+  },
+  "upcomingAppointments": [
+    { "id": 1, "avatar": "AA", "patientName": "Asad Ali", "time": "09:30 AM", "status": "confirmed", "type": "General Checkup" },
+    { "id": 2, "avatar": "ZK", "patientName": "Zainab Khan", "time": "10:00 AM", "status": "pending", "type": "Dental Cleaning" },
+    { "id": 3, "avatar": "FA", "patientName": "Faisal Ahmed", "time": "11:15 AM", "status": "confirmed", "type": "Follow-up" }
+  ],
+  "recentPatients": [
+    { "id": 1, "name": "Maryam Javed", "lastVisit": "2025-08-05", "status": "active", "nextAppointment": "2025-08-15" },
+    { "id": 2, "name": "Junaid Butt", "lastVisit": "2025-08-01", "status": "inactive", "nextAppointment": "-" },
+    { "id": 3, "name": "Saima Chaudhry", "lastVisit": "2025-07-29", "status": "active", "nextAppointment": "2025-08-20" }
+  ]
+}
+
+

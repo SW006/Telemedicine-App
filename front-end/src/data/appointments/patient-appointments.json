@@ -1,0 +1,63 @@
+{
+  "appointments": [
+    { 
+      "id": "1", 
+      "doctorName": "Dr. Fatima Malik", 
+      "specialty": "Cardiology", 
+      "date": "2024-01-15", 
+      "time": "10:00 AM", 
+      "status": "confirmed", 
+      "location": "Medical Center Downtown", 
+      "type": "consultation" 
+    },
+    { 
+      "id": "2", 
+      "doctorName": "Dr. Imran Siddiqui", 
+      "specialty": "Dermatology", 
+      "date": "2024-01-18", 
+      "time": "2:30 PM", 
+      "status": "pending", 
+      "location": "Skin Care Clinic", 
+      "type": "follow-up" 
+    },
+    { 
+      "id": "3", 
+      "doctorName": "Dr. Ayesha Rahman", 
+      "specialty": "Orthopedics", 
+      "date": "2024-01-20", 
+      "time": "9:00 AM", 
+      "status": "confirmed", 
+      "location": "Orthopedic Institute", 
+      "type": "consultation" 
+    },
+    { 
+      "id": "4", 
+      "doctorName": "Dr. Usman Farooq", 
+      "specialty": "Neurology", 
+      "date": "2024-01-22", 
+      "time": "11:15 AM", 
+      "status": "cancelled", 
+      "location": "Neurology Center", 
+      "type": "consultation" 
+    }
+  ],
+  "appointmentTypes": [
+    "consultation",
+    "checkup", 
+    "follow-up"
+  ],
+  "timeSlots": [
+    "09:00 AM", 
+    "09:30 AM", 
+    "10:00 AM", 
+    "10:30 AM",
+    "11:00 AM", 
+    "11:30 AM", 
+    "02:00 PM", 
+    "02:30 PM",
+    "03:00 PM", 
+    "03:30 PM", 
+    "04:00 PM", 
+    "04:30 PM"
+  ]
+}

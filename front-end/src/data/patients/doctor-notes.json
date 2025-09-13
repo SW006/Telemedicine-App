@@ -1,0 +1,18 @@
+[
+	{
+		"id": "n1",
+		"patientId": "1",
+		"date": "2025-08-01",
+		"doctor": "Dr. Ayesha",
+		"summary": "Follow-up for hypertension management",
+		"details": "BP stable at 125/80. Continued on current meds. Advised low-salt diet and 30 min daily walk. Next review in 4 weeks."
+	},
+	{
+		"id": "n2",
+		"patientId": "2",
+		"date": "2025-07-20",
+		"doctor": "Dr. Hamza",
+		"summary": "Diabetes Type 2 review",
+		"details": "HbA1c improved from 7.8% to 7.1%. Adjusted Metformin dose. Recommended CGM trial."
+	}
+]
