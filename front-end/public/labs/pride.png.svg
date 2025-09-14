@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
-  <rect width="200" height="200" fill="#f0f9ff" />
-  <text x="100" y="100" font-family="Arial" font-size="24" text-anchor="middle" dominant-baseline="middle" fill="#0369a1">Pride Labs</text>
-  <polygon points="100,50 120,90 160,90 130,115 140,155 100,135 60,155 70,115 40,90 80,90" fill="none" stroke="#0369a1" stroke-width="4" />
-</svg>
