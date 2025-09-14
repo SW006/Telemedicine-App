@@ -1,17 +1,21 @@
 {
-  "name": "medical-booking-app",
+  "name": "tele-tabib-integration",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "TeleTabib Medical Booking Application - Full Stack Integration",
+  "private": true,
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd front-end && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "install:all": "npm install && cd front-end && npm install && cd ../backend && npm install",
+    "build": "cd front-end && npm run build",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:frontend": "cd front-end && npm run start",
+    "start:backend": "cd backend && npm run start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
+    "axios": "^1.12.1",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
@@ -36,6 +40,11 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "nodemon": "^3.1.10"
-  }
+  },
+  "workspaces": [
+    "front-end",
+    "backend"
+  ]
 }

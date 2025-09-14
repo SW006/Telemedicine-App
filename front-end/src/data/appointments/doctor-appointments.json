@@ -1,0 +1,51 @@
+{
+  "appointments": [
+    {
+      "id": "1",
+      "patientName": "Asad Ali",
+      "specialty": "Cardiology",
+      "date": "2024-01-15",
+      "time": "10:00 AM",
+      "status": "confirmed",
+      "location": "Medical Center Downtown",
+      "type": "consultation"
+    },
+    {
+      "id": "2",
+      "patientName": "Sana Riaz",
+      "specialty": "Dermatology",
+      "date": "2024-01-18",
+      "time": "2:30 PM",
+      "status": "pending",
+      "location": "Skin Care Clinic",
+      "type": "follow-up"
+    },
+    {
+      "id": "3",
+      "patientName": "Tariq Mahmood",
+      "specialty": "Orthopedics",
+      "date": "2024-01-20",
+      "time": "9:00 AM",
+      "status": "confirmed",
+      "location": "Orthopedic Institute",
+      "type": "consultation"
+    },
+    {
+      "id": "4",
+      "patientName": "Ayesha Khan",
+      "specialty": "Neurology",
+      "date": "2024-01-22",
+      "time": "11:15 AM",
+      "status": "cancelled",
+      "location": "Neurology Center",
+      "type": "consultation"
+    }
+  ],
+  "appointmentTypes": [
+    "all",
+    "consultation",
+    "follow-up",
+    "emergency",
+    "routine"
+  ]
+}
