@@ -2,9 +2,9 @@
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const pool = require('../db/db');
+const { pool } = require('../db/db');
 const { getUserByEmail } = require('../db/queries');
-const { sendPasswordResetEmail, sendPasswordChangeNotification } = require('../utils/emailSender'); // ADDED
+const { sendPasswordResetEmail } = require('../utils/emailSender');
 
 // Generate a simple reset token (for database storage)
 const generateResetToken = () => {
@@ -106,7 +106,7 @@ const resetPassword = async (req, res) => {
 
     // Check if token exists in database and hasn't expired
     const userCheck = await pool.query(
-      `SELECT id, email, name, reset_token_expiry 
+      `SELECT id, email, reset_token_expiry 
        FROM users 
        WHERE reset_token = $1 AND reset_token_expiry > NOW()`,
       [token]
@@ -130,7 +130,7 @@ const resetPassword = async (req, res) => {
            reset_token = NULL,
            reset_token_expiry = NULL
        WHERE id = $2 
-       RETURNING id, email, name`,
+       RETURNING id, email`,
       [hashedPassword, user.id]
     );
 
@@ -139,17 +139,6 @@ const resetPassword = async (req, res) => {
         success: false,
         error: 'User not found'
       });
-    }
-
-    const updatedUser = result.rows[0];
-    
-    // Send password change notification email
-    try {
-      await sendPasswordChangeNotification(updatedUser.email, updatedUser.name);
-      console.log('Password change notification sent to:', updatedUser.email);
-    } catch (emailError) {
-      console.error('Failed to send password change notification:', emailError.message);
-      // Don't fail the request if email fails, just log it
     }
 
     res.status(200).json({ 
@@ -217,6 +206,7 @@ const verifyResetToken = async (req, res) => {
   }
 };
 
+
 const testEmailConfig = async (req, res) => {
   try {
     const { testEmailConnection } = require('../utils/emailSender');
@@ -237,6 +227,5 @@ const testEmailConfig = async (req, res) => {
 module.exports = {
   forgotPassword,
   resetPassword,
-  verifyResetToken,
-  testEmailConfig
+  verifyResetToken
 };

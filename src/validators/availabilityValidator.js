@@ -44,15 +44,13 @@ const validateAvailabilitySlot = [
 ];
 
 const validateDateQuery = [
-  body('date')
-    .optional()
-    .isISO8601()
-    .withMessage('Valid date format required (YYYY-MM-DD)'),
-  
   (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      throw new ValidationError('Validation failed', errors.array());
+    const { date } = req.query;
+    if (date && !Date.parse(date)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid date format required (YYYY-MM-DD)'
+      });
     }
     next();
   }

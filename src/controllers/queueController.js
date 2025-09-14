@@ -1,4 +1,4 @@
-const pool = require('../db/db');
+const { pool } = require('../db/db');
 const QueueService = require('../services/queueService');
 const { DatabaseError, ValidationError } = require('../utils/errors/AppError');
 

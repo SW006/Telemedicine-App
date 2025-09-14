@@ -38,6 +38,45 @@ const validateRegistration = [
   }
 ];
 
+// Signup validation for OTP flow (simplified)
+const validateSignup = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email address'),
+  
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
+  
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Name must be between 2 and 100 characters'),
+  
+  body('contact_number')
+    .optional()
+    .isLength({ min: 10, max: 15 })
+    .withMessage('Contact number must be between 10 and 15 characters'),
+  
+  body('phone')
+    .optional()
+    .isLength({ min: 10, max: 15 })
+    .withMessage('Phone number must be between 10 and 15 characters'),
+  
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+    next();
+  }
+];
+
 // User login validation
 const validateSignIn = [
   body('email')
@@ -74,7 +113,11 @@ const validateOTP = [
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      throw new ValidationError('Validation failed', errors.array());
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
     }
     next();
   }
@@ -90,7 +133,11 @@ const validateEmail = [
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      throw new ValidationError('Validation failed', errors.array());
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
     }
     next();
   }
@@ -98,6 +145,7 @@ const validateEmail = [
 
 module.exports = {
   validateRegistration,
+  validateSignup,
   validateSignIn,
   validateOTP,
   validateEmail

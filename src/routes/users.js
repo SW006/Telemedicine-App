@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth'); 
 const { getUserById } = require('../db/queries');
-const pool = require('../db/db');
+const { pool } = require('../db/db');
 const { validateUpdateProfile, validateUserId } = require('../validators/userValidator');
 
 // Import user controller if you have one
@@ -19,13 +19,24 @@ router.get('/me', authenticateToken, async (req, res, next) => {
       throw err;
     }
     
+    // Check if user is a doctor
+    const doctorCheck = await pool.query(
+      'SELECT id FROM doctors WHERE user_id = $1 AND verified = true',
+      [req.user.id]
+    );
+    
+    const userRole = doctorCheck.rows.length > 0 ? 'doctor' : 'patient';
+    
     // Don't return sensitive data
     const userData = user.rows[0];
     const { password_hash, reset_token, ...safeUserData } = userData;
     
     res.json({ 
       success: true,
-      data: safeUserData 
+      data: {
+        ...safeUserData,
+        role: userRole
+      }
     });
   } catch (error) {
     next(error);

@@ -3,11 +3,11 @@ const { Pool } = require('pg');
 
 const databaseConfig = {
   development: {
-    user: 'postgres',
-    host: 'localhost',
-    database: 'medical_booking',
-    password: 'Medical@Booking123!',
-    port: 5432,
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'medical_booking',
+    password: process.env.DB_PASSWORD || 'Medical@Booking123!',
+    port: parseInt(process.env.DB_PORT) || 5432,
     max: parseInt(process.env.DB_POOL_MAX) || 20,
     idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT) || 30000,
     connectionTimeoutMillis: 2000,

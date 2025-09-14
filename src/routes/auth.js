@@ -4,18 +4,22 @@ const authController = require('../controllers/authController');
 const otpController = require('../controllers/otpController');
 const passwordController = require('../controllers/passwordController');
 const auth = require('../middleware/auth');
-const { authenticateToken } = require('../middleware/auth'); 
+const { authenticateToken } = require('../middleware/auth');
+const { validateSignup, validateOTP, validateSignIn } = require('../validators/authValidator');
 
 // Routes:
 // Use otpController for OTP-related routes
-router.post('/sign-up', otpController.signUp); // Changed from authController to otpController
-router.post('/verify-otp', otpController.verifyOTP); // Changed from authController to otpController
+router.post('/sign-up', validateSignup, otpController.signUp); // Added validation middleware
+router.post('/verify-otp', validateOTP, otpController.verifyOTP); // Changed from authController to otpController
 router.post('/resend-otp', otpController.resendOTP); // Changed from authController to otpController
 
 // Use authController for authentication routes
-router.post('/sign-in', authController.handleSignIn);
+router.post('/sign-in', validateSignIn, authController.handleSignIn);
 router.post('/logout', authController.logout);
 router.delete('/delete-account', authenticateToken, authController.softDeleteAccount);
+
+// Doctor registration route
+router.post('/doctor-signup', authController.doctorSignUp);
 
 // Use passwordController for password-related routes
 router.post('/forgot-password', passwordController.forgotPassword);

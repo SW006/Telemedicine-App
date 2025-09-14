@@ -1,5 +1,5 @@
 const socketIO = require('socket.io');
-const pool = require('../db/db');
+const { pool } = require('../db/db');
 const { authenticateSocketToken, handleJWTError } = require('../middleware/auth');
 
 let io;

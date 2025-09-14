@@ -1,20 +1,9 @@
 const { Pool } = require('pg');
+const { getConfig } = require('../config/database');
 require('dotenv').config();
 
-// Database configuration
-const poolConfig = {
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT || 5432,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-  keepAlive: true,
-  reapIntervalMillis: 1000,
-  createRetryIntervalMillis: 2000
-};
+// Use the centralized database configuration
+const poolConfig = getConfig();
 
 const pool = new Pool(poolConfig);
 
@@ -62,12 +51,4 @@ testConnection()
     process.exit(1);
   });
 
-  pool.on('connect', () => {
-  console.log('✅ Connected to PostgreSQL database');
-});
-
-pool.on('error', (err) => {
-  console.error('❌ Database connection error:', err);
-});
-
-module.exports = pool;
+module.exports = { pool, testConnection };

@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const pool = require('../db/db');
+const { pool } = require('../db/db');
 const { generateOTP } = require('../utils/otpGenerator');
 const { sendOTPEmail } = require('../utils/emailSender');
 
@@ -271,6 +271,14 @@ const authController = {
         { expiresIn: '1h' }
       );
       
+      // Check if user is a doctor
+      const doctorCheck = await pool.query(
+        'SELECT id FROM doctors WHERE user_id = $1 AND verified = true',
+        [user.id]
+      );
+      
+      const userRole = doctorCheck.rows.length > 0 ? 'doctor' : 'patient';
+
       return res.status(200).json({
         success: true,
         data: {
@@ -280,10 +288,11 @@ const authController = {
             email: user.email,
             name: user.name,
             phone: user.phone,
-            contact_number: user.contact_number
+            contact_number: user.contact_number,
+            role: userRole
           }
         },
-        redirectTo: '/',
+        redirectTo: userRole === 'doctor' ? '/doctor' : '/patient',
         message: 'Sign in successful'
       });
     } catch (error) {
@@ -308,6 +317,134 @@ const authController = {
         success: false,
         error: 'Internal server error' 
       });
+    }
+  },
+
+  // NEW: Doctor signup method that auto-approves doctors
+  doctorSignUp: async (req, res, next) => {
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      const { 
+        firstName, 
+        lastName, 
+        email, 
+        phone, 
+        city, 
+        speciality, 
+        pmdc, 
+        experience = 0,
+        message = '',
+        password = 'Doctor123!' // Default password for doctors
+      } = req.body;
+      
+      // Validate required fields
+      if (!firstName || !lastName || !email || !phone || !city || !speciality || !pmdc) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          error: 'All required fields must be provided'
+        });
+      }
+      
+      // Check if user already exists
+      const existingUser = await getUserByEmail(email);
+      if (existingUser.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          error: 'User already exists with this email'
+        });
+      }
+      
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Create user record
+      const userResult = await client.query(
+        `INSERT INTO users (email, password_hash, name, contact_number, phone, verified)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id, email, name, contact_number, phone`,
+        [
+          email,
+          hashedPassword,
+          `${firstName} ${lastName}`,
+          phone,
+          phone,
+          true // Auto-verify doctors
+        ]
+      );
+      
+      const userId = userResult.rows[0].id;
+      
+      // Create doctor record
+      const doctorResult = await client.query(
+        `INSERT INTO doctors (user_id, specialty, experience, license_number, verified, consultation_fee)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id, specialty, experience, license_number, verified`,
+        [
+          userId,
+          speciality,
+          parseInt(experience) || 0,
+          pmdc,
+          true, // Auto-verify doctors
+          100.00 // Default consultation fee
+        ]
+      );
+      
+      await client.query('COMMIT');
+      
+      // Create JWT token
+      const token = jwt.sign(
+        {
+          userId: userId,
+          email: email
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+      
+      res.status(201).json({
+        success: true,
+        message: 'Doctor registration successful! You can now start accepting patients.',
+        data: {
+          token,
+          user: {
+            id: userId,
+            email: userResult.rows[0].email,
+            name: userResult.rows[0].name,
+            phone: userResult.rows[0].phone,
+            contact_number: userResult.rows[0].contact_number,
+            role: 'doctor'
+          },
+          doctor: {
+            id: doctorResult.rows[0].id,
+            specialty: doctorResult.rows[0].specialty,
+            experience: doctorResult.rows[0].experience,
+            license_number: doctorResult.rows[0].license_number,
+            verified: doctorResult.rows[0].verified
+          }
+        },
+        redirectTo: '/doctor'
+      });
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Doctor signup error:', error);
+      
+      // Handle unique constraint violation
+      if (error.code === '23505') {
+        return res.status(400).json({
+          success: false,
+          error: 'PMDC number or email already exists'
+        });
+      }
+      
+      next(error);
+    } finally {
+      client.release();
     }
   },
 

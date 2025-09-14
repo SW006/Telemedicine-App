@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const pool = require('../db/db'); // Add this import
+const { pool } = require('../db/db');
 
 // Main authentication middleware - UPDATED to check for deleted users
 const authenticateToken = async (req, res, next) => {

@@ -1,28 +1,31 @@
-const pool = require('../db/db');
+const { pool } = require('../db/db');
 const { sendNotification } = require('../services/notificationService'); // You might need to create this
 
 const appointmentController = {
   // Book appointment
   bookAppointment: async (req, res, next) => {
     try {
-      const { doctorId, date, timeSlot, consultationType = 'video', notes } = req.body;
-      const patientId = req.user.id;
+      const { doctorId, date, time, type = 'Consultation', notes } = req.body;
+      const patientId = req.userId; // Use userId from auth middleware
       
-      // Use your existing availability check logic
-      const availabilityCheck = await pool.query(
-        `SELECT da.* FROM doctor_availability da
-         WHERE da.doctor_id = $1 
-         AND da.day_of_week = $2
-         AND da.start_time <= $3 
-         AND da.end_time >= $4 
-         AND da.is_available = true`,
-        [doctorId, new Date(date).getDay(), timeSlot.start, timeSlot.end]
-      );
-      
-      if (availabilityCheck.rows.length === 0) {
+      // Validate required fields
+      if (!doctorId || !date || !time) {
         return res.status(400).json({ 
           success: false,
-          error: 'Doctor not available at this time' 
+          error: 'Doctor ID, date, and time are required' 
+        });
+      }
+      
+      // Check if doctor exists
+      const doctorCheck = await pool.query(
+        'SELECT id FROM doctors WHERE id = $1 AND verified = true',
+        [doctorId]
+      );
+      
+      if (doctorCheck.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Doctor not found or not verified' 
         });
       }
       
@@ -31,13 +34,9 @@ const appointmentController = {
         `SELECT id FROM appointments 
          WHERE doctor_id = $1 
          AND appointment_date = $2 
-         AND (
-           (start_time <= $3 AND end_time > $3) OR
-           (start_time < $4 AND end_time >= $4) OR
-           (start_time >= $3 AND end_time <= $4)
-         ) 
+         AND appointment_time = $3
          AND status != 'cancelled'`,
-        [doctorId, date, timeSlot.start, timeSlot.end]
+        [doctorId, date, time]
       );
       
       if (conflictCheck.rows.length > 0) {
@@ -47,19 +46,22 @@ const appointmentController = {
         });
       }
       
+      // Create appointment
       const appointment = await pool.query(
         `INSERT INTO appointments 
-          (patient_id, doctor_id, appointment_date, start_time, end_time, consultation_type, notes, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'scheduled') 
+          (patient_id, doctor_id, appointment_date, appointment_time, type, notes, status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'confirmed') 
          RETURNING *`,
-        [patientId, doctorId, date, timeSlot.start, timeSlot.end, consultationType, notes]
+        [patientId, doctorId, date, time, type, notes]
       );
       
-      res.json({ 
-        success: true, 
-        appointment: appointment.rows[0] 
+      res.status(201).json({ 
+        success: true,
+        message: 'Appointment booked successfully',
+        data: appointment.rows[0] 
       });
     } catch (error) {
+      console.error('Book appointment error:', error);
       next(error);
     }
   },
@@ -68,20 +70,20 @@ const appointmentController = {
   getUserAppointments: async (req, res, next) => {
     try {
       const { status, page = 1, limit = 10 } = req.query;
-      const patientId = req.user.id;
+      const patientId = req.userId; // Use userId from auth middleware
 
       // Calculate offset for pagination
       const offset = (page - 1) * limit;
       
       let query = `
         SELECT a.*, 
-               d.first_name as doctor_first_name, 
-               d.last_name as doctor_last_name,
-               d.specialization as doctor_specialization,
-               d.email as doctor_email,
-               d.phone as doctor_phone
+               u.name as doctor_name,
+               d.specialty as doctor_specialization,
+               u.email as doctor_email,
+               u.phone as doctor_phone
         FROM appointments a
-        JOIN users d ON a.doctor_id = d.id
+        JOIN doctors d ON a.doctor_id = d.id
+        JOIN users u ON d.user_id = u.id
         WHERE a.patient_id = $1
       `;
       
@@ -96,7 +98,7 @@ const appointmentController = {
       
       // Count total records for pagination
       const countQuery = query.replace(
-        'SELECT a.*, d.first_name as doctor_first_name, d.last_name as doctor_last_name, d.specialization as doctor_specialization, d.email as doctor_email, d.phone as doctor_phone',
+        'SELECT a.*, u.name as doctor_name, d.specialty as doctor_specialization, u.email as doctor_email, u.phone as doctor_phone',
         'SELECT COUNT(*)'
       );
       
@@ -104,7 +106,7 @@ const appointmentController = {
       const total = parseInt(countResult.rows[0].count);
       
       // Add ordering and pagination
-      query += ` ORDER BY a.appointment_date DESC, a.start_time DESC 
+      query += ` ORDER BY a.appointment_date DESC, a.appointment_time DESC 
                  LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
       
       queryParams.push(limit, offset);
@@ -113,7 +115,7 @@ const appointmentController = {
       
       res.json({
         success: true,
-        appointments: result.rows,
+        data: result.rows,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -122,6 +124,7 @@ const appointmentController = {
         }
       });
     } catch (error) {
+      console.error('Get user appointments error:', error);
       next(error);
     }
   },
@@ -130,7 +133,7 @@ const appointmentController = {
   cancelAppointment: async (req, res, next) => {
     try {
       const { appointmentId } = req.params;
-      const patientId = req.user.id;
+      const patientId = req.userId; // Use userId from auth middleware
 
       // First check if appointment exists and belongs to the patient
       const appointmentCheck = await pool.query(
@@ -148,7 +151,7 @@ const appointmentController = {
       const appointment = appointmentCheck.rows[0];
       
       // Check if appointment can be cancelled (e.g., not too close to appointment time)
-      const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.start_time}`);
+      const appointmentDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
       const now = new Date();
       const hoursDifference = (appointmentDateTime - now) / (1000 * 60 * 60);
       
@@ -168,9 +171,10 @@ const appointmentController = {
       res.json({
         success: true,
         message: 'Appointment cancelled successfully',
-        appointment: result.rows[0]
+        data: result.rows[0]
       });
     } catch (error) {
+      console.error('Cancel appointment error:', error);
       next(error);
     }
   },

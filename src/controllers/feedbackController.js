@@ -1,5 +1,5 @@
 const { validationResult } = require('express-validator');
-const pool = require('../db/db');
+const { pool } = require('../db/db');
 
 const feedbackController = {
   // Submit feedback for an appointment
