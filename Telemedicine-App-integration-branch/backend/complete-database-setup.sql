@@ -5,11 +5,11 @@
 -- Run this script to get a fully functional database
 
 -- Drop existing database if exists and create new one
-DROP DATABASE IF EXISTS medical_booking;
-CREATE DATABASE medical_booking;
+DROP DATABASE IF EXISTS MedicalApp;
+CREATE DATABASE MedicalApp;
 
 -- Connect to the database
-\c medical_booking;
+\c MedicalApp;
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

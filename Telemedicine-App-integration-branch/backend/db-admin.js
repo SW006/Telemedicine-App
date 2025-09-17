@@ -31,7 +31,7 @@ async function showTables() {
             ORDER BY table_name;
         `);
         
-        console.log('\n📊 Tables in medical_booking database:');
+        console.log('\n📊 Tables in MedicalApp database:');
         console.log('=====================================');
         result.rows.forEach((row, index) => {
             console.log(`${index + 1}. ${row.table_name} (${row.table_type})`);

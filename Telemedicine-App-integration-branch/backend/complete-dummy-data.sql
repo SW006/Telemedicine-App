@@ -3,7 +3,7 @@
 -- =============================================
 -- Fix prescription data and add comprehensive dummy data
 
-\c medical_booking;
+\c MedicalApp;
 
 -- Fix Prescriptions with proper UUIDs
 INSERT INTO prescriptions (appointment_id, doctor_id, patient_id, total_medications, status) VALUES

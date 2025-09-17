@@ -53,7 +53,7 @@ Open `.env` file and update these values:
 ```env
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=medical_booking
+DB_NAME=MedicalApp
 DB_USER=postgres
 DB_PASSWORD=Medical@Booking123!
 
@@ -93,7 +93,7 @@ Enter password: `Medical@Booking123!`
 
 ### 2. Create Database
 ```sql
-CREATE DATABASE medical_booking;
+CREATE DATABASE MedicalApp;
 \q
 ```
 
@@ -140,7 +140,7 @@ npm run db:test
 ### Check Tables Created
 Connect to PostgreSQL:
 ```bash
-psql -U postgres -d medical_booking
+psql -U postgres -d MedicalApp
 ```
 
 List tables:
@@ -191,7 +191,7 @@ sudo -u postgres psql
 #### 3. "database does not exist"
 ```bash
 # Create database manually
-createdb -U postgres medical_booking
+createdb -U postgres MedicalApp
 ```
 
 #### 4. "connection refused"
@@ -252,7 +252,7 @@ DB_POOL_IDLE_TIMEOUT=30000
 
 After successful setup:
 
-1. ✅ Database is running on `postgresql://localhost:5432/medical_booking`
+1. ✅ Database is running on `postgresql://localhost:5432/MedicalApp`
 2. ✅ Backend API will be available on `http://localhost:5000`
 3. ✅ Frontend will be available on `http://localhost:3000`
 4. ✅ All tables are created and ready for use
