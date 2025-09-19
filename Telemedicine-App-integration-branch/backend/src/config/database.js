@@ -5,7 +5,7 @@ const databaseConfig = {
   development: {
     user: 'postgres',
     host: 'localhost',
-    database: 'MedicalApp',
+    database: 'medical_booking',
     password: 'Medical@Booking123!',
     port: 5432,
     max: parseInt(process.env.DB_POOL_MAX) || 20,
@@ -22,7 +22,7 @@ const databaseConfig = {
   test: {
     user: process.env.DB_USER || 'postgres',
     host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME ? `${process.env.DB_NAME}_test` : 'MedicalApp_test',
+    database: process.env.DB_NAME ? `${process.env.DB_NAME}_test` : 'medical_booking_test',
     password: process.env.DB_PASSWORD || 'Medical@Booking123!',
     port: parseInt(process.env.DB_PORT) || 5432,
     max: 5,

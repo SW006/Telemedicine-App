@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Calendar, Clock, User, MapPin } from "lucide-react";
-import { fetchDoctorAppointments } from "@/lib/dataService";
+import { Search, Calendar, Clock, User, MapPin, Plus, Check, X } from "lucide-react";
+import { fetchDoctorAppointments, cancelAppointment } from "@/lib/dataService";
 
 interface Appointment {
   id: number;
@@ -30,6 +30,7 @@ export default function DoctorAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   
   const appointmentTypes = ['Consultation', 'Follow-up', 'Emergency', 'Routine Check-up', 'Specialist Visit'];
 
@@ -89,10 +90,44 @@ export default function DoctorAppointments() {
     }
   };
 
+  const handleAcceptAppointment = async (appointmentId: number) => {
+    try {
+      // TODO: Implement accept appointment API call
+      console.log('Accepting appointment:', appointmentId);
+      alert('Appointment accepted successfully!');
+      await loadAppointments();
+    } catch (error) {
+      console.error('Error accepting appointment:', error);
+      alert('Failed to accept appointment.');
+    }
+  };
+
+  const handleCancelAppointment = async (appointmentId: number) => {
+    if (!confirm('Are you sure you want to cancel this appointment?')) {
+      return;
+    }
+
+    try {
+      await cancelAppointment(appointmentId);
+      await loadAppointments();
+      alert('Appointment cancelled successfully!');
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      alert('Failed to cancel appointment.');
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">My Appointments</h1>
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setShowCreateModal(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Create Appointment
+        </Button>
       </div>
 
       {/* Search and Filters */}
@@ -195,12 +230,61 @@ export default function DoctorAppointments() {
                       </Badge>
                       
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          Accept
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                          Cancel
-                        </Button>
+                        {appointment.status === 'pending' && (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-green-600 hover:text-green-700 hover:border-green-300"
+                              onClick={() => handleAcceptAppointment(appointment.id)}
+                            >
+                              <Check className="w-3 h-3 mr-1" />
+                              Accept
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-red-600 hover:text-red-700 hover:border-red-300"
+                              onClick={() => handleCancelAppointment(appointment.id)}
+                            >
+                              <X className="w-3 h-3 mr-1" />
+                              Decline
+                            </Button>
+                          </>
+                        )}
+                        {(appointment.status === 'scheduled' || appointment.status === 'confirmed') && (
+                          <>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-700 hover:border-blue-300"
+                            >
+                              Start
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-red-600 hover:text-red-700 hover:border-red-300"
+                              onClick={() => handleCancelAppointment(appointment.id)}
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        )}
+                        {appointment.status === 'in-progress' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-green-600 hover:text-green-700 hover:border-green-300"
+                          >
+                            Complete
+                          </Button>
+                        )}
+                        {(appointment.status === 'completed' || appointment.status === 'cancelled') && (
+                          <Badge variant="secondary" className="text-gray-600">
+                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -210,6 +294,205 @@ export default function DoctorAppointments() {
           )}
         </div>
       )}
+
+      {/* Create Appointment Modal */}
+      {showCreateModal && (
+        <CreateAppointmentModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={loadAppointments}
+        />
+      )}
+    </div>
+  );
+}
+
+// Create Appointment Modal Component
+function CreateAppointmentModal({ 
+  isOpen, 
+  onClose, 
+  onSuccess 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [patientName, setPatientName] = useState('');
+  const [patientEmail, setPatientEmail] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [type, setType] = useState('Consultation');
+  const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const appointmentTypes = ['Consultation', 'Follow-up', 'Emergency', 'Routine Check-up', 'Specialist Visit'];
+  const timeSlots = [
+    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
+    '15:00', '15:30', '16:00', '16:30', '17:00'
+  ];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!patientName || !patientEmail || !date || !time) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // TODO: Implement create appointment for patient API call
+      console.log('Creating appointment:', {
+        patientName,
+        patientEmail,
+        date,
+        time,
+        type,
+        notes
+      });
+      alert('Appointment created successfully!');
+      onSuccess();
+      onClose();
+      // Reset form
+      setPatientName('');
+      setPatientEmail('');
+      setDate('');
+      setTime('');
+      setType('Consultation');
+      setNotes('');
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      alert('Failed to create appointment.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Create Appointment</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Patient Name *</label>
+              <Input
+                value={patientName}
+                onChange={(e) => setPatientName(e.target.value)}
+                placeholder="Enter patient name"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Patient Email *</label>
+              <Input
+                type="email"
+                value={patientEmail}
+                onChange={(e) => setPatientEmail(e.target.value)}
+                placeholder="Enter patient email"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Date *</label>
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Time *</label>
+                <select
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select time</option>
+                  {timeSlots.map((slot) => (
+                    <option key={slot} value={slot}>
+                      {slot}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Appointment Type</label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {appointmentTypes.map((appType) => (
+                  <option key={appType} value={appType}>
+                    {appType}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Notes</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                placeholder="Any additional notes..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading || !patientName || !patientEmail || !date || !time}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Appointment
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

@@ -220,9 +220,23 @@ function DoctorsPageContent() {
         isOpen={isAppointmentModalOpen}
         onClose={() => setIsAppointmentModalOpen(false)}
         onConfirm={async (data) => {
-          await createAppointment({ doctorId: data.doctorId, date: data.date, time: data.time, type: data.type, notes: data.notes })
-          setIsAppointmentModalOpen(false)
-          alert(`Appointment scheduled with ${data.doctorName} on ${data.date} at ${data.time}`)
+          try {
+            console.log('🏥 Creating appointment with data:', data)
+            const result = await createAppointment({ 
+              doctorId: data.doctorId, 
+              date: data.date, 
+              time: data.time, 
+              type: data.type, 
+              notes: data.notes 
+            })
+            console.log('✅ Appointment created successfully:', result)
+            setIsAppointmentModalOpen(false)
+            alert(`Appointment scheduled with ${data.doctorName} on ${data.date} at ${data.time}`)
+          } catch (error) {
+            console.error('❌ Failed to create appointment:', error)
+            // Don't close modal on error, let the modal handle the error display
+            throw error // Re-throw so the modal can handle it
+          }
         }}
       />
     </main>

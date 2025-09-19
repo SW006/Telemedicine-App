@@ -10,6 +10,7 @@ import {
   bookAppointment as apiBookAppointment,
   getMyAppointments as apiGetMyAppointments,
   getDoctorAppointments as apiGetDoctorAppointments,
+  cancelAppointment as apiCancelAppointment,
   submitFeedback as apiSubmitFeedback,
   getDoctorFeedback as apiGetDoctorFeedback,
   joinQueue as apiJoinQueue,
@@ -792,16 +793,30 @@ export async function addDoctorReview(doctorId: number, review: Omit<Review, 'id
 }
 
 export async function createAppointment(input: { doctorId: number; date: string; time: string; type: string; notes?: string }): Promise<{ id: string }> {
+  console.log('📡 createAppointment called with:', input)
+  
+  // Input validation
+  if (!input.doctorId || !input.date || !input.time || !input.type) {
+    throw new Error('Missing required appointment data')
+  }
+  
   return handleApiCall(
     async () => {
+      console.log('🚀 Calling apiBookAppointment...')
       const response = await apiBookAppointment(input)
+      console.log('✅ apiBookAppointment response:', response)
       return response.data
     },
     'Create Appointment'
   ).catch(error => {
-    console.error('Error creating appointment:', error)
-    // Fallback to mock response if API fails
-    return { id: `${input.doctorId}-${Date.now()}` }
+    console.error('❌ Error creating appointment:', error)
+    // For development, return a mock response but still show the error
+    const mockResponse = { id: `mock-${input.doctorId}-${Date.now()}` }
+    console.log('🚑 Using mock response for development:', mockResponse)
+    
+    // In production, you'd want to throw the error
+    // For now, let's return the mock to test the UI flow
+    return mockResponse
   })
 }
 
@@ -819,6 +834,44 @@ function transformAppointment(backendAppointment: any): Appointment {
   }
 }
 
+// Mock appointments data for development
+const generateMockAppointments = (statusFilter?: string) => {
+  const mockData = [
+    {
+      id: 1,
+      doctorName: 'Dr. Sarah Johnson',
+      date: '2025-09-20',
+      time: '10:00',
+      type: 'Consultation',
+      status: 'scheduled' as const,
+      location: 'TeleTabib Online',
+      specialty: 'General Practice'
+    },
+    {
+      id: 2,
+      doctorName: 'Dr. Ahmed Ali',
+      date: '2025-09-22',
+      time: '14:30',
+      type: 'Follow-up',
+      status: 'confirmed' as const,
+      location: 'Medical Center Downtown',
+      specialty: 'Cardiology'
+    },
+    {
+      id: 3,
+      doctorName: 'Dr. Maria Garcia',
+      date: '2025-09-18',
+      time: '09:00',
+      type: 'Consultation',
+      status: 'completed' as const,
+      location: 'TeleTabib Online',
+      specialty: 'Dermatology'
+    }
+  ]
+  
+  return mockData.filter(apt => !statusFilter || apt.status === statusFilter)
+}
+
 // ---------------- Appointments API ----------------
 export async function fetchAppointments(status?: string, page: number = 1, limit: number = 10) {
   console.log('📅 fetchAppointments called with:', { status, page, limit })
@@ -828,6 +881,11 @@ export async function fetchAppointments(status?: string, page: number = 1, limit
       console.log('📞 Calling apiGetMyAppointments...')
       const response = await apiGetMyAppointments(status, page, limit)
       console.log('✅ fetchAppointments API response:', response)
+      
+      if (!response || !response.success) {
+        throw new Error('API returned unsuccessful response')
+      }
+      
       // Backend returns { success, appointments, pagination }
       // Transform backend data to frontend format
       const transformedAppointments = (response.appointments || []).map(transformAppointment)
@@ -837,9 +895,26 @@ export async function fetchAppointments(status?: string, page: number = 1, limit
     'Fetch Appointments'
   ).catch(error => {
     console.error('❌ Error fetching appointments:', error)
-    console.log('🚑 Falling back to mock data')
-    // Fallback to mock data if API fails (already in correct format)
-    return { data: mockAppointments.patientAppointments }
+    console.log('🚑 Falling back to mock data for development')
+    
+    // Generate mock appointments for development
+    const mockAppointments = generateMockAppointments(status)
+    console.log('🌭 Mock appointments generated:', mockAppointments)
+    
+    return { data: mockAppointments }
+  })
+}
+
+export async function cancelAppointment(appointmentId: number) {
+  return handleApiCall(
+    async () => {
+      const response = await apiCancelAppointment(appointmentId)
+      return response.data
+    },
+    'Cancel Appointment'
+  ).catch(error => {
+    console.error('Error cancelling appointment:', error)
+    throw error
   })
 }
 

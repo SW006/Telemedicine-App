@@ -355,10 +355,116 @@ const setTestData = (req, res) => {
   });
 };
 
+// Doctor-specific signup function
+const doctorSignUp = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      phone, 
+      city, 
+      speciality, 
+      pmdc, 
+      experience, 
+      message 
+    } = req.body;
+    
+    // Check if doctor already exists in DATABASE
+    const existingUser = await pool.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
+    
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Doctor already exists with this email'
+      });
+    }
+
+    // Check if there's already a pending registration
+    const existingTempData = await getTempUserData(email);
+    if (existingTempData) {
+      return res.status(400).json({
+        success: false,
+        error: 'Registration already in progress. Please verify your OTP or wait for it to expire.'
+      });
+    }
+
+    // Generate OTP with 10-minute expiry
+    const otp = generateOTP();
+    const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    
+    // For doctors, we might not need a password initially (admin approval process)
+    // But let's generate a temporary password for now
+    const tempPassword = 'temp-' + Date.now(); // This should be changed on first login
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    
+    // Store doctor data temporarily (NOT in database yet)
+    const tempDoctor = {
+      firstName,
+      lastName,
+      email,
+      password_hash: hashedPassword,
+      name: `${firstName} ${lastName}`,
+      phone,
+      city,
+      speciality,
+      pmdc,
+      experience,
+      message,
+      userType: 'doctor', // Mark as doctor
+      otp,
+      otpExpiry,
+      createdAt: new Date()
+    };
+    
+    // Save to temporary storage
+    await saveTempUserData(email, tempDoctor);
+
+    // Send OTP via email
+    await sendOTPEmail(email, otp);
+
+    // DEBUG LOG
+    console.log('=== NEW DOCTOR SIGN UP (TEMP STORAGE) ===');
+    console.log('Email:', email);
+    console.log('Name:', `${firstName} ${lastName}`);
+    console.log('Speciality:', speciality);
+    console.log('PMDC:', pmdc);
+    console.log('OTP:', otp);
+    console.log('Expires at:', new Date(otpExpiry).toISOString());
+    console.log('=========================================');
+
+    return res.json({
+      success: true,
+      message: 'OTP sent to your email. Please verify to complete doctor registration.',
+      email: email,
+      expiresIn: 10 // 10 minutes
+    });
+  } catch (error) {
+    console.error('Doctor sign up error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to process doctor registration'
+    });
+  }
+};
+
 module.exports = {
   signUp,
   verifyOTP,
   resendOTP,
+  doctorSignUp,
   checkOTPStatus,
   clearTempStorage,
   setTestData

@@ -18,10 +18,19 @@ const { ValidationError } = require('../utils/errors/AppError');
 router.get('/', async (req, res, next) => {
   try {
     const doctors = await getDoctors();
+    
+    // Convert string ratings to numbers and handle null values
+    const processedDoctors = doctors.rows.map(doctor => ({
+      ...doctor,
+      rating: doctor.rating ? parseFloat(doctor.rating) : 0.0,
+      consultation_fee: doctor.consultation_fee ? parseFloat(doctor.consultation_fee) : 0.0,
+      experience: doctor.experience ? parseInt(doctor.experience) : 0
+    }));
+    
     res.json({
       success: true,
-      data: doctors.rows,
-      count: doctors.rows.length
+      data: processedDoctors,
+      count: processedDoctors.length
     });
   } catch (error) {
     next(error);
@@ -106,9 +115,9 @@ router.get('/search', async (req, res, next) => {
           id: row.id,
           name: row.doctor_name,
           specialty: row.specialty,
-          experience: row.experience,
-          consultation_fee: row.consultation_fee,
-          rating: row.rating,
+          experience: row.experience ? parseInt(row.experience) : 0,
+          consultation_fee: row.consultation_fee ? parseFloat(row.consultation_fee) : 0.0,
+          rating: row.rating ? parseFloat(row.rating) : 0.0,
           languages: row.languages,
           license_number: row.license_number,
           contact_number: row.contact_number,
@@ -223,9 +232,17 @@ router.get('/search/advanced', async (req, res, next) => {
 
     const result = await pool.query(query, params);
     
+    // Convert string values to proper types
+    const processedDoctors = result.rows.map(doctor => ({
+      ...doctor,
+      rating: doctor.rating ? parseFloat(doctor.rating) : 0.0,
+      consultation_fee: doctor.consultation_fee ? parseFloat(doctor.consultation_fee) : 0.0,
+      experience: doctor.experience ? parseInt(doctor.experience) : 0
+    }));
+    
     res.json({
       success: true,
-      doctors: result.rows,
+      doctors: processedDoctors,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -241,16 +258,25 @@ router.get('/search/advanced', async (req, res, next) => {
 // Get doctor by ID
 router.get('/doctor/:doctorId', async (req, res, next) => {
   try {
-    const doctor = await getDoctorById(req.params.id);
+    const doctor = await getDoctorById(req.params.doctorId);
     if (doctor.rows.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'Doctor not found'
       });
     }
+    
+    // Convert string values to proper types
+    const processedDoctor = {
+      ...doctor.rows[0],
+      rating: doctor.rows[0].rating ? parseFloat(doctor.rows[0].rating) : 0.0,
+      consultation_fee: doctor.rows[0].consultation_fee ? parseFloat(doctor.rows[0].consultation_fee) : 0.0,
+      experience: doctor.rows[0].experience ? parseInt(doctor.rows[0].experience) : 0
+    };
+    
     res.json({
       success: true,
-      data: doctor.rows[0]
+      data: processedDoctor
     });
   } catch (error) {
     next(error);

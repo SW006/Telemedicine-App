@@ -49,10 +49,10 @@ const appointmentController = {
       
       const appointment = await pool.query(
         `INSERT INTO appointments 
-          (patient_id, doctor_id, appointment_date, start_time, end_time, consultation_type, notes, status)
+          (patient_id, doctor_id, appointment_date, appointment_time, duration_minutes, appointment_type, notes, status)
          VALUES ($1, $2, $3, $4, $5, $6, $7, 'scheduled') 
          RETURNING *`,
-        [patientId, doctorId, date, timeSlot.start, timeSlot.end, consultationType, notes]
+        [patientId, doctorId, date, timeSlot.start || '10:00', 30, consultationType, notes]
       );
       
       res.json({ 
@@ -66,22 +66,62 @@ const appointmentController = {
 
   // Get user appointments
   getUserAppointments: async (req, res, next) => {
+    const startTime = Date.now();
+    let queryTimeout;
+    
     try {
+      console.log('📅 getUserAppointments called at:', new Date().toISOString());
+      
       const { status, page = 1, limit = 10 } = req.query;
+      
+      // Check if user is authenticated
+      if (!req.user || !req.user.id) {
+        console.log('❌ User not authenticated');
+        return res.status(401).json({
+          success: false,
+          error: 'User not authenticated'
+        });
+      }
+      
+      // Set a timeout for the entire operation
+      queryTimeout = setTimeout(() => {
+        console.log('⏰ Query timeout after 30 seconds');
+        if (!res.headersSent) {
+          res.status(408).json({
+            success: false,
+            error: 'Request timeout - appointments query took too long'
+          });
+        }
+      }, 30000);
+      
       const patientId = req.user.id;
+      console.log('📅 Getting appointments for patient:', patientId, { status, page, limit });
 
       // Calculate offset for pagination
       const offset = (page - 1) * limit;
       
+      // Query that matches actual database schema
       let query = `
-        SELECT a.*, 
-               u.name as doctor_name,
-               d.specialization as doctor_specialization,
-               u.email as doctor_email,
-               u.phone as doctor_phone
+        SELECT a.id,
+               a.doctor_id,
+               a.appointment_date,
+               a.appointment_time,
+               a.duration_minutes,
+               a.appointment_type as type,
+               a.notes,
+               a.symptoms,
+               a.status,
+               a.consultation_fee,
+               a.created_at,
+               a.updated_at,
+               CASE 
+                 WHEN d.user_id IS NOT NULL THEN COALESCE(u.name, 'Dr. Unknown')
+                 ELSE 'Dr. Unknown'
+               END as doctor_name,
+               COALESCE(d.specialty, 'General Practice') as doctor_specialization
         FROM appointments a
-        JOIN doctors d ON a.doctor_id = d.id
-        JOIN users u ON d.user_id = u.id  
+        LEFT JOIN doctors d ON a.doctor_id = d.id
+        LEFT JOIN users u ON d.user_id = u.id
         WHERE a.patient_id = $1
       `;
       
@@ -94,14 +134,20 @@ const appointmentController = {
         queryParams.push(status);
       }
       
-      // Count total records for pagination
-      const countQuery = query.replace(
-        'SELECT a.*, d.first_name as doctor_first_name, d.last_name as doctor_last_name, d.specialization as doctor_specialization, d.email as doctor_email, d.phone as doctor_phone',
-        'SELECT COUNT(*)'
-      );
+      // Simple count query
+      let countQuery = `
+        SELECT COUNT(*) as total
+        FROM appointments a
+        WHERE a.patient_id = $1
+      `;
       
-      const countResult = await pool.query(countQuery, queryParams);
-      const total = parseInt(countResult.rows[0].count);
+      if (status) {
+        countQuery += ` AND a.status = $2`;
+      }
+      
+      // Get total count
+      const countResult = await pool.query(countQuery, status ? [patientId, status] : [patientId]);
+      const total = parseInt(countResult.rows[0].total) || 0;
       
       // Add ordering and pagination
       query += ` ORDER BY a.appointment_date DESC, a.start_time DESC 
@@ -109,20 +155,61 @@ const appointmentController = {
       
       queryParams.push(limit, offset);
       
+      console.log('🔍 Executing query:', query);
+      console.log('📊 Query params:', queryParams);
+      
       const result = await pool.query(query, queryParams);
       
-      res.json({
-        success: true,
-        appointments: result.rows,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / limit)
-        }
-      });
+      console.log('✅ Found appointments:', result.rows.length);
+      
+      // Clear the timeout
+      if (queryTimeout) {
+        clearTimeout(queryTimeout);
+      }
+      
+      const duration = Date.now() - startTime;
+      console.log(`⏱️ Query completed in ${duration}ms`);
+      
+      if (!res.headersSent) {
+        res.json({
+          success: true,
+          appointments: result.rows,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: Math.ceil(total / limit)
+          },
+          meta: {
+            queryTime: duration + 'ms'
+          }
+        });
+      }
     } catch (error) {
-      next(error);
+      // Clear the timeout in case of error
+      if (queryTimeout) {
+        clearTimeout(queryTimeout);
+      }
+      
+      const duration = Date.now() - startTime;
+      console.error('❌ Error getting user appointments:', {
+        error: error.message,
+        duration: duration + 'ms',
+        userId: req.user?.id,
+        stack: error.stack
+      });
+      
+      // Only send response if headers haven't been sent
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to fetch appointments',
+          details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+          meta: {
+            queryTime: duration + 'ms'
+          }
+        });
+      }
     }
   },
 

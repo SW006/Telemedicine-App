@@ -87,7 +87,7 @@ npm run dev
 
 # 3. Application will be running at:
 # Backend API: http://localhost:5000
-# Database: postgresql://localhost:5432/MedicalApp
+# Database: postgresql://localhost:5432/medical_booking
 ```
 
 ### **Test Database:**

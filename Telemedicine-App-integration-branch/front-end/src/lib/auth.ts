@@ -35,7 +35,7 @@ export type VerifyOtpResponse = SignInResponse
 const STORAGE_KEY = 'teletabib_token'
 
 export function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api'
+  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001/api'
 }
 
 // Enhanced axios instance with better error handling
@@ -705,6 +705,35 @@ export async function getDoctorAppointments(status?: string, date?: string, page
     } catch (error: unknown) {
       const classifiedError = classifyError(error)
       logError(classifiedError, 'Get Doctor Appointments')
+      
+      // Clear token if authentication failed
+      if (classifiedError.type === 'authentication') {
+        clearToken()
+      }
+      
+      throw new Error(handleApiError(classifiedError))
+    }
+  }, {
+    maxRetries: 2,
+    retryableStatuses: [408, 429, 500, 502, 503, 504]
+  })
+}
+
+export async function cancelAppointment(appointmentId: number) {
+  // Input validation
+  if (!appointmentId || appointmentId <= 0) {
+    throw new Error('Valid appointment ID is required')
+  }
+
+  return withRetry(async () => {
+    try {
+      const response = await apiClient.patch(
+        `${getApiBaseUrl()}/appointments/${appointmentId}/cancel`
+      )
+      return response.data
+    } catch (error: unknown) {
+      const classifiedError = classifyError(error)
+      logError(classifiedError, 'Cancel Appointment')
       
       // Clear token if authentication failed
       if (classifiedError.type === 'authentication') {

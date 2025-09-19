@@ -6,7 +6,7 @@ Your TeleTabib application is now fully configured and running! Here's a summary
 
 ### 🐘 PostgreSQL Database
 - **Status**: ✅ Running and Connected
-- **Database**: `MedicalApp`
+- **Database**: `medical_booking`
 - **Host**: `localhost:5432`
 - **User**: `postgres`
 - **Tables**: 42 tables created (users, doctors, appointments, etc.)
@@ -73,7 +73,7 @@ node test-smtp.js
 ## 🌐 Application URLs
 
 - **Backend API**: http://localhost:5000
-- **Database**: postgresql://localhost:5432/MedicalApp
+- **Database**: postgresql://localhost:5432/medical_booking
 - **Health Check**: http://localhost:5000/api/health
 
 ---
@@ -109,7 +109,7 @@ npm start
 ```env
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=MedicalApp
+DB_NAME=medical_booking
 DB_USER=postgres
 DB_PASSWORD=Medical@Booking123!
 ```

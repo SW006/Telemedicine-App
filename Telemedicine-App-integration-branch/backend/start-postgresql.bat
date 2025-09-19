@@ -21,7 +21,7 @@ timeout /t 3 > nul
 pg_isready -h localhost -p 5432 > nul 2>&1
 if %errorlevel% == 0 (
     echo ✅ PostgreSQL started successfully!
-    echo 📊 Database: MedicalApp
+    echo 📊 Database: medical_booking
     echo 🌐 Host: localhost:5432
     echo 👤 User: postgres
 ) else (

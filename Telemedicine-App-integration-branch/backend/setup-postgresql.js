@@ -11,7 +11,7 @@ const createDbConfig = {
 
 const dbConfig = {
   ...createDbConfig,
-  database: process.env.DB_NAME || 'MedicalApp'
+  database: process.env.DB_NAME || 'medical_booking'
 };
 
 /**
@@ -324,7 +324,7 @@ async function setupPostgreSQL() {
     console.log('📋 Next steps:');
     console.log('1. Copy .env.example to .env and update your credentials');
     console.log('2. Run: npm run dev to start the application');
-    console.log('3. Your database is ready at: postgresql://localhost:5432/MedicalApp');
+    console.log('3. Your database is ready at: postgresql://localhost:5432/medical_booking');
     
   } catch (error) {
     console.error('\n💥 Setup failed:', error.message);

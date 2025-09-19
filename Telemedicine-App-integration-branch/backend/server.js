@@ -112,7 +112,7 @@ app.use((err, req, res, next) => {
 });
 
 // 10. Start Server
-const PORT = process.env.PORT || 5000;
+const PORT = 5001;
 
 // Create HTTP server
 const server = createServer(app);

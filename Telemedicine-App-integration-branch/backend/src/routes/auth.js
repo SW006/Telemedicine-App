@@ -17,6 +17,9 @@ router.post('/sign-in', authController.handleSignIn);
 router.post('/logout', authController.logout);
 router.delete('/delete-account', authenticateToken, authController.softDeleteAccount);
 
+// Doctor-specific signup route
+router.post('/doctor-signup', otpController.doctorSignUp);
+
 // Use passwordController for password-related routes
 router.post('/forgot-password', passwordController.forgotPassword);
 router.post('/reset-password', passwordController.resetPassword);

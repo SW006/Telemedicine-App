@@ -46,6 +46,12 @@ export default function AppointmentModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!date || !time) {
+      alert('Please select both date and time for the appointment')
+      return
+    }
+    
     setIsSubmitting(true)
     
     try {
@@ -58,20 +64,39 @@ export default function AppointmentModal({
         notes
       }
       
-      await onConfirm(appointmentData)
+      console.log('🚀 Submitting appointment data:', appointmentData)
+      
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 30000)
+      )
+      
+      await Promise.race([
+        onConfirm(appointmentData),
+        timeoutPromise
+      ])
+      
+      console.log('✅ Appointment confirmed, closing modal')
       handleClose()
     } catch (error) {
-      console.error('Error scheduling appointment:', error)
+      console.error('❌ Error scheduling appointment:', error)
+      alert('Failed to schedule appointment. Please try again.')
     } finally {
+      console.log('🔄 Resetting submission state')
       setIsSubmitting(false)
     }
   }
 
-  const handleClose = () => {
+  const resetForm = () => {
     setDate('')
     setTime('')
     setType('Consultation')
     setNotes('')
+    setIsSubmitting(false)
+  }
+  
+  const handleClose = () => {
+    resetForm()
     onClose()
   }
 
